@@ -1,0 +1,66 @@
+# Положить в корень проекта: chat-service/Taskfile.yml
+# Документация: https://taskfile.dev
+version: "3"
+
+vars:
+  GO_MODULE: github.com/MalyginDanila/chat-service
+  CONFIG: configs/config.toml
+  COMPOSE: docker compose -f deploy/local/docker-compose.yml
+
+tasks:
+  default:
+    desc: tidy + fmt + lint + test
+    cmds:
+      - task: tidy
+      - task: fmt
+      - task: lint
+      - task: test
+
+  tidy:
+    cmds:
+      - go mod tidy
+
+  fmt:
+    cmds:
+      - gofumpt -w .
+      - gci write --skip-generated -s standard -s default -s "prefix({{.GO_MODULE}})" .
+
+  lint:
+    cmds:
+      - golangci-lint run ./...
+
+  test:
+    desc: unit-тесты (на Windows -race требует CGO/gcc; уберите флаг, если его нет)
+    cmds:
+      - go test -race -count=1 ./...
+
+  test:e2e:
+    desc: E2E-тесты (модуль 3); сервис и зависимости должны быть запущены
+    cmds:
+      - go test -count=1 -tags e2e ./tests/e2e/...
+
+  generate:
+    desc: кодогенерация (типы, ent, oapi, моки)
+    cmds:
+      - go generate ./...
+
+  build:
+    cmds:
+      - go build -o bin/chat-service ./cmd/chat-service
+
+  run:
+    cmds:
+      - go run ./cmd/chat-service -config {{.CONFIG}}
+
+  deps:up:
+    desc: поднять зависимости (модуль 2+)
+    cmds:
+      - "{{.COMPOSE}} up -d"
+
+  deps:down:
+    cmds:
+      - "{{.COMPOSE}} down"
+
+  deps:logs:
+    cmds:
+      - "{{.COMPOSE}} logs -f {{.CLI_ARGS}}"

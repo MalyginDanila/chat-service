@@ -1,0 +1,55 @@
+# Конфигурация golangci-lint v2.
+# Положить в корень проекта: chat-service/.golangci.yml
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - bodyclose     # не закрыт resp.Body
+    - contextcheck  # потерянный context
+    - errorlint     # сравнение ошибок без errors.Is/As
+    - gocritic
+    - gosec         # потенциальные уязвимости
+    - misspell
+    - nilerr
+    - noctx         # http-запросы без context
+    - revive
+    - sqlclosecheck
+    - unconvert
+    - unparam
+    - usestdlibvars
+  settings:
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+    gosec:
+      excludes:
+        - G104 # дублирует errcheck
+  exclusions:
+    generated: lax
+    paths:
+      - internal/store        # код ent
+      - ".*\\.gen\\.go$"      # наш сгенерированный код
+    rules:
+      - path: _test\.go
+        linters: [gosec, unparam]
+
+formatters:
+  enable:
+    - gofumpt
+    - gci
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/student/chat-service)
+  exclusions:
+    generated: lax
+    paths:
+      - internal/store
